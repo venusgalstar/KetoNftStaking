@@ -9,50 +9,121 @@ font-family: 'Ubuntu', sans-serif;
 i {
     font-family: FontAwesome;
 }
-  /* **** hero section **** */
-  body {
+/* **** hero section **** */
+body {
     background-color: #0d1221;
     background-image: url(/img/popsicle-bg.png);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: top left;
-  }
-  body.confetti {
+}
+body.confetti {
     background-image: url(/img/CompletionBackground-clean.png);
-  }
-  div#root {
+}
+div#root {
     overflow: hidden;
     height: 100vh;
     display: flex;
     flex-direction: column;
     padding: 0 5% !important;
-  }
-  #main{
+}
+#main{
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-  }
-  #HomeHero {
+}
+
+#HomeHero {
     display: flex;
-    min-height: 700px;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
-  }
-  .wallet-connection, .project-description {
+}
+
+#HomeHero h1 {
+    font-size: 2.5em;
+    color: white;
+}
+
+.nft-list {
+    display: flex; 
+    flex-direction: column;
+    /* justify-content: center; */
+    overflow-y: auto;
+    width: 360px;
+    height: 700px;
+    max-height: 700px;
+    margin: 5px;
+    padding: 55px 40px;
+    z-index: 5;
+    border-radius: 20px;
+    max-width: 650px;
+    background: #141928;
+    background-image: radial-gradient(circle at 100% 100%, transparent 18px, #80f4c4 18px, #80f4c4 20px, transparent 20px), linear-gradient(to right, #80f4c4, #5b5bff), radial-gradient(circle at 0% 100%, transparent 18px, #5b5bff 18px, #5b5bff 20px, transparent 20px), linear-gradient(to bottom, #5b5bff, #ed6fe5), radial-gradient(circle at 0% 0%, transparent 18px, #ed6fe5 18px, #ed6fe5 20px, transparent 20px), linear-gradient(to left, #ed6fe5, #516ef8), radial-gradient(circle at 100% 0%, transparent 18px, #516ef8 18px, #516ef8 20px, transparent 20px), linear-gradient(to top, #516ef8, #80f4c4);
+    background-size: 20px 20px, calc(100% - 40px) 2px, 20px 20px, 2px calc(100% - 40px);
+    background-position: top left,top center,top right,center right, bottom right,bottom center,bottom left,center left;
+    background-repeat: no-repeat;
+}
+
+.nft-list-item {
+    border: 2px solid #ea6fe6;
+    margin: 5px;
+    display: flex;
+    align-items: center;
+    width: 270px;
+    justify-content: space-evenly;
+}
+
+.nft-list-item button {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    border-radius: 6px;
+    color: white;
+    font-size: 20px;
+    width: 100px;
+    min-height: 50px;
+    margin: 2px;
+    border: none;
+    background: rgb(127,243,197);
+    background: -moz-linear-gradient(90deg, rgba(127,243,197,1) 0%, rgba(85,90,255,1) 52%, rgba(234,111,230,1) 100%);
+    background: -webkit-linear-gradient(90deg, rgba(127,243,197,1) 0%, rgba(85,90,255,1) 52%, rgba(234,111,230,1) 100%);
+    background: linear-gradient(90deg, rgba(127,243,197,1) 0%, rgba(85,90,255,1) 52%, rgba(234,111,230,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#7ff3c5",endColorstr="#ea6fe6",GradientType=1);
+}
+
+.nft-list-item button:hover {
+    background: rgb(234,111,230);
+    background: -moz-linear-gradient(90deg, rgba(234,111,230,1) 0%, rgba(85,90,255,1) 52%, rgba(127,243,197,1) 100%);
+    background: -webkit-linear-gradient(90deg, rgba(234,111,230,1) 0%, rgba(85,90,255,1) 52%, rgba(127,243,197,1) 100%);
+    background: linear-gradient(90deg, rgba(234,111,230,1) 0%, rgba(85,90,255,1) 52%, rgba(127,243,197,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ea6fe6",endColorstr="#7ff3c5",GradientType=1);
+}
+
+.nft-button-container {
+    display: flex;
+    flex-direction: column;
+    margin: 2px;
+}
+
+.wallet-connection {
     min-height: 400px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-  .project-title {
+    height: 100%;
+}
+
+.project-title {
     color: white;
     font-size: 44px;
     margin-top: 40px;
-    }
+}
+
 .project-description-text {
     color: white;
     margin-top: 25px;
@@ -60,6 +131,7 @@ i {
     line-height: 34px;
     max-width: 490px;
 }
+
 .wallet-connection {
     z-index: 5;
     border-radius: 20px;
@@ -71,11 +143,9 @@ i {
     background-position: top left,top center,top right,center right, bottom right,bottom center,bottom left,center left;
     background-repeat: no-repeat;
 }
-.project-description {
-margin-right: 5%;
-}
+
 img.swapPresale {
-max-width: 343px;
+    max-width: 343px;
 }
 .whitePpr {
     color: white;
@@ -148,6 +218,7 @@ button.connectWallet {
     background: linear-gradient(90deg, rgba(127,243,197,1) 0%, rgba(85,90,255,1) 52%, rgba(234,111,230,1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#7ff3c5",endColorstr="#ea6fe6",GradientType=1);
 }
+
 button.connectWallet:hover {
     background: rgb(234,111,230);
     background: -moz-linear-gradient(90deg, rgba(234,111,230,1) 0%, rgba(85,90,255,1) 52%, rgba(127,243,197,1) 100%);
@@ -155,6 +226,7 @@ button.connectWallet:hover {
     background: linear-gradient(90deg, rgba(234,111,230,1) 0%, rgba(85,90,255,1) 52%, rgba(127,243,197,1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ea6fe6",endColorstr="#7ff3c5",GradientType=1);
 }
+
 .priceHolder {
     display: flex;
     justify-content: space-around;
@@ -238,8 +310,6 @@ ul.buyInfo li {
 }
 .newInputs {
     margin-top: 30px;
-    display: flex;
-    justify-content: space-between;
 }
 .newInputs .amoutToken {
     margin-bottom: 23px;
@@ -755,7 +825,7 @@ footer .center a:hover, footer .left a:hover {
         flex-wrap: wrap;
         height: 100%;
     }
-    .project-description {
+    .nft-list {
         margin-right: 0;
         margin-bottom: 50px;
     }

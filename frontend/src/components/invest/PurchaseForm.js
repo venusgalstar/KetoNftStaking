@@ -1,29 +1,43 @@
-// import StatefulComponent from "../StatefulComponent";
 import { useDispatch, useSelector } from "react-redux";
-import PurchaseLimits from "./PurchaseLimits";
 import { toast } from "react-toastify";
-import Popup from './Popup/Popup';
 import { useEffect, useState } from "react";
+import Popup from './Popup/Popup';
 
 const PurchaseForm = () => {
-    const [invest, setInvestAmount] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const [currentReward, setCurrentReward] = useState(0);
 
     const dispatch = useDispatch();
     const account = useSelector(state => state.account);
-    const stakingTokenAmount = useSelector(state => state.stakingTokenAmount);
-    const totalStakedAmount = useSelector(state => state.totalStakedAmount);
-    const totalClaimedAmount = useSelector(state => state.totalClaimedAmount);
-    const stakedTokenAmount = useSelector(state => state.stakedTokenAmount);
-    const rewardTokenAmount = useSelector(state => state.rewardTokenAmount);
-    const aprRate = useSelector(state => state.aprRate);
-    const lastClaim = useSelector(state => state.lastClaim);
+    const totalBalance = useSelector(state => state.totalBalance);
+    const rewardsPerUnitTime = useSelector(state => state.rewardsPerUnitTime);
+    const timeUnit = useSelector(state => state.timeUnit);
+    const stakedTokens = useSelector(state => state.stakedTokens);
+    const unstakedTokens = useSelector(state => state.unstakedTokens);
+    const amountStaked = useSelector(state => state.amountStaked);
+    const timeOfLastUpdate = useSelector(state => state.timeOfLastUpdate);
+    const unclaimedRewards = useSelector(state => state.unclaimedRewards);
 
-    const stake = () => {
-        if (Number(invest) > 0) dispatch({ type: "STAKE_TOKEN", payload: { stakingTokenAmount: invest } });
+    const stakeAll = () => {
+        if (!account) {
+            toast.info('Please connect wallet!', {
+                position: 'top-center',
+                autoClose: 3000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return;
+        }
+
+        if (unstakedTokens.length > 0) {
+            var tokenIds = unstakedTokens.map(item => item.id);
+            dispatch({ type: "STAKE_ALL_TOKENS", payload: { tokenIds: tokenIds } });
+        }
         else {
-            toast.info('Input value must be bigger than zero.', {
+            toast.info('There is no token to stake!', {
                 position: 'top-center',
                 autoClose: 3000,
                 hideProgressBar: true,
@@ -36,9 +50,23 @@ const PurchaseForm = () => {
     }
 
     const claim = () => {
-        if (Number(stakedTokenAmount) > 0) dispatch({ type: "CLAIM_TOKEN", payload: {} });
+        if (!account) {
+            toast.info('Please connect wallet!', {
+                position: 'top-center',
+                autoClose: 3000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return;
+        }
+
+        if (currentReward > 0)
+            dispatch({ type: "CLAIM_TOKEN", payload: {} });
         else {
-            toast.info('You did not stake.', {
+            toast.info('There is no reward!', {
                 position: 'top-center',
                 autoClose: 3000,
                 hideProgressBar: true,
@@ -50,10 +78,26 @@ const PurchaseForm = () => {
         }
     }
 
-    const unstake = () => {
-        if (Number(stakedTokenAmount) > 0) dispatch({ type: "UNSTAKE_TOKEN", payload: {} });
+    const unstakeAll = () => {
+        if (!account) {
+            toast.info('Please connect wallet!', {
+                position: 'top-center',
+                autoClose: 3000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return;
+        }
+
+        if (stakedTokens.length > 0) {
+            var tokenIds = unstakedTokens.map(item => item.id);
+            dispatch({ type: "UNSTAKE_ALL_TOKENS", payload: tokenIds });
+        }
         else {
-            toast.info('You did not stake.', {
+            toast.info('There is no token to unstake!', {
                 position: 'top-center',
                 autoClose: 3000,
                 hideProgressBar: true,
@@ -63,10 +107,6 @@ const PurchaseForm = () => {
                 progress: undefined,
             });
         }
-    }
-
-    const handleChange = (event) => {
-        setInvestAmount(event.target.value);
     }
 
     const handleConnect = async () => {
@@ -75,7 +115,8 @@ const PurchaseForm = () => {
             dispatch({
                 type: 'CONNECT_WALLET',
             });
-        } else {
+        }
+        else {
             toast.info('Please install metamask on your device', {
                 position: 'top-center',
                 autoClose: 3000,
@@ -93,33 +134,23 @@ const PurchaseForm = () => {
         setIsOpen(!isOpen);
     };
 
-    const onClickMAX = () => {
-        dispatch({ type: "GET_BALANCE_AND_SET_AMOUNT_OF_pPOP_TOKEN", payload: {} });
-    }
-
     const updateReward = () => {
         let time = parseInt(Date.now() / 1000);
 
-        console.log("lastClaim", lastClaim);
-        var reward = rewardTokenAmount + stakedTokenAmount * aprRate * (time - lastClaim) / 100 * 3600 * 24 * 365;
-        console.log("reward", reward);
-        console.log("rewardTokenAmount", rewardTokenAmount);
+        console.log("timeOfLastUpdate: ", timeOfLastUpdate);
+        var reward = unclaimedRewards + (time - timeOfLastUpdate) * amountStaked * rewardsPerUnitTime / timeUnit;
+        console.log("reward: ", reward);
         reward = parseFloat(reward).toFixed(5);
         setCurrentReward(reward);
     }
 
     useEffect(() => {
-        if (stakingTokenAmount >= 0) setInvestAmount(stakingTokenAmount);
-    }, [stakingTokenAmount])
-
-    useEffect(() => {
         if (account) {
-
             setTimeout(() => {
                 setInterval(updateReward, 1000);
             }, 1000);
         }
-    }, [lastClaim]);
+    }, [timeOfLastUpdate]);
 
     useEffect(() => {
         if (account) {
@@ -130,7 +161,6 @@ const PurchaseForm = () => {
     }, [account, dispatch]);
 
     useEffect(() => {
-        console.log("AAA");
         dispatch({ type: "GET_CONTRACT_INFO", payload: {} });
     }, []);
 
@@ -147,80 +177,43 @@ const PurchaseForm = () => {
                     <div className="newInputs">
                         <div className="leftInputs NewHolder">
                             <div className="amoutToken">
-                                <label>Total Staked</label>
+                                <label>Total Balance:</label>
                                 {
-                                    totalStakedAmount > 0 ?
-                                        <span>: {totalStakedAmount}</span>
-                                        :
-                                        <span>: 0 </span>
+                                    totalBalance > 0 ? (<span>{totalBalance}</span>) : (<span>0</span>)
                                 }
                             </div>
-                            <div className="amoutToken">
-                                <label>Staking</label>
-                                {
-                                    stakedTokenAmount >= 0 ?
-                                        <span>: {stakedTokenAmount}</span>
-                                        :
-                                        <span>: 0 </span>
-                                }
-                            </div>
-                            <div className="newInputsItem">
-                                {/* <input className={returnCoinAmount > 0 ? "input-warning active" : "input-warning"} type="text" placeholder="1000" */}
-                                {
-                                    account ?
-                                        <input className="input-warning " type="text" placeholder="0"
-                                            value={invest ?? ""}
-                                            onChange={(e) => handleChange(e)} />
-                                        :
-                                        <input className="input-warning " type="text" placeholder="0"
-                                            value={invest ?? ""}
-                                            onChange={(e) => handleChange(e)} disabled />
-                                }
-                                <span className="max_button" onClick={() => onClickMAX()}>MAX</span>
-                                <button className="selectDinar">
-                                    <div className="optionDinar" >
-                                        <div className="imageDinar"><img alt="USDC.e" src="/img/logo.png" /></div>
-                                    </div>
-                                    <div className="">BRO</div>
-                                </button>
-                            </div>
-                            <PurchaseLimits compact={true} />
                         </div>
 
                         <div className="rightInputs NewHolder">
-
                             <div className="amoutToken">
-                                <label>Total Claimed</label>
+                                <label>Rewards:</label>
                                 {
-                                    totalClaimedAmount > 0 ?
-                                        <span>: {totalClaimedAmount}</span>
-                                        :
-                                        <span>: 0 </span>
-                                }
-                            </div>
-                            <div className="amoutToken">
-                                <label>Rewards</label>
-                                {
-                                    currentReward > 0 ?
-                                        <span>: {currentReward}</span>
-                                        :
-                                        <span>: 0 </span>
+                                    currentReward > 0 ? (<span>{currentReward}</span>) : (<span>0</span>)
                                 }
                             </div>
                         </div>
 
                     </div>
-                    <button className="connectWallet" onClick={() => stake()}>Stake</button>
+                    <button className="connectWallet" onClick={() => stakeAll()}>Stake All</button>
                     <button className="connectWallet" onClick={() => claim()}>Claim</button>
-                    <button className="connectWallet" onClick={() => unstake()}>Unstake</button>
+                    <button className="connectWallet" onClick={() => unstakeAll()}>Unstake All</button>
                 </div>
-                {isOpen && (
+                {
+                    isOpen && (
                     <Popup
                         content={
                             <>
                                 <div className="connectTitle">Connect a wallet</div>
                                 <div className="walletHolder">
-                                    <div className="walletItem"><a onClick={() => handleConnect()} href="#root" ><img alt="MetaMask" src="/img/MetaMask_Fox.png" />MetaMask<span className="arrowRightBtn"><i className="fa-solid fa-chevron-right"></i></span></a></div>
+                                    <div className="walletItem">
+                                        <a onClick={() => handleConnect()} href="#root" >
+                                            <img alt="MetaMask" src="/img/MetaMask_Fox.png" />
+                                            MetaMask
+                                            <span className="arrowRightBtn">
+                                                <i className="fa-solid fa-chevron-right"></i>
+                                            </span>
+                                        </a>
+                                    </div>
                                 </div>
                             </>
                         }
