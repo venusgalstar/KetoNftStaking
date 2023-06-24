@@ -135,30 +135,21 @@ const PurchaseForm = () => {
     };
 
     const updateReward = () => {
-        let time = parseInt(Date.now() / 1000);
-
-        console.log("timeOfLastUpdate: ", timeOfLastUpdate);
-        var reward = unclaimedRewards + (time - timeOfLastUpdate) * amountStaked * rewardsPerUnitTime / timeUnit;
-        console.log("reward: ", reward);
-        reward = parseFloat(reward).toFixed(5);
-        setCurrentReward(reward);
+        //console.log("updateReward:", account);
+        if (account) {
+            let time = parseInt(Date.now() / 1000);
+            var reward = unclaimedRewards + (time - timeOfLastUpdate) * amountStaked * rewardsPerUnitTime / timeUnit;
+            reward = parseFloat(reward).toFixed(5);
+            setCurrentReward(reward);
+        }
+        else
+            setCurrentReward(0);
     }
 
     useEffect(() => {
-        if (account) {
-            setTimeout(() => {
-                setInterval(updateReward, 1000);
-            }, 1000);
-        }
+        const refreshInterval = setInterval(updateReward, 1000);
+        return () => clearInterval(refreshInterval);
     }, [timeOfLastUpdate]);
-
-    useEffect(() => {
-        if (account) {
-            setTimeout(() => {
-                dispatch({ type: "GET_ACCOUNT_INFO", payload: {} });
-            }, 500);
-        }
-    }, [account, dispatch]);
 
     useEffect(() => {
         dispatch({ type: "GET_CONTRACT_INFO", payload: {} });
@@ -166,25 +157,25 @@ const PurchaseForm = () => {
 
     return (
         <>
-            <div className="purchase-form wallet-connection" >
+            <div className="wallet-connection" >
                 <div className="purchase-amount">
                     {
                         account ?
                             <div className="account-address">{account.slice(0, 6) + "..." + account.slice(38)}</div>
                             :
-                            <button onClick={() => togglePopup()} className="connectWallet">Connect wallet</button>
+                            <button onClick={() => togglePopup()} className="button-style">Connect wallet</button>
                     }
                     <div className="newInputs">
-                        <div className="leftInputs NewHolder">
+                        <div className="NewHolder">
                             <div className="amoutToken">
-                                <label>Total Balance:</label>
+                                <label>Liquidity:</label>
                                 {
                                     totalBalance > 0 ? (<span>{totalBalance}</span>) : (<span>0</span>)
                                 }
                             </div>
                         </div>
 
-                        <div className="rightInputs NewHolder">
+                        <div className="NewHolder">
                             <div className="amoutToken">
                                 <label>Rewards:</label>
                                 {
@@ -194,9 +185,9 @@ const PurchaseForm = () => {
                         </div>
 
                     </div>
-                    <button className="connectWallet" onClick={() => stakeAll()}>Stake All</button>
-                    <button className="connectWallet" onClick={() => claim()}>Claim</button>
-                    <button className="connectWallet" onClick={() => unstakeAll()}>Unstake All</button>
+                    <button className="button-style" onClick={() => stakeAll()}>Stake All</button>
+                    <button className="button-style" onClick={() => claim()}>Claim</button>
+                    <button className="button-style" onClick={() => unstakeAll()}>Unstake All</button>
                 </div>
                 {
                     isOpen && (

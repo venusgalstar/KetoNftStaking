@@ -35,7 +35,10 @@ var config = {
     //chainId: '0x61',      // bsc testnet : '0x97'   
 
     NFTStakeAddress: "0x395805794241d667F744FE51dD8aBEf165Ff3670",  // NFT staking contract address
-    ERC721Address: "0x5D57780A0794fA9F447C3ED238069ECD68100Cbb"     // ERC721 token contract address
+    ERC721Address: "0x5D57780A0794fA9F447C3ED238069ECD68100Cbb",    // ERC721 token contract address
+
+    NFT_SERVER_API_URL: "https://api.nftport.xyz/v0/accounts",
+    NFT_SERVER_API_KEY: "9ab697a7-eea2-414e-b088-6658ceb53b4d"
 };
 
 export default config; 

@@ -1,13 +1,13 @@
 import { createStore } from 'redux'
 import Web3 from 'web3';
-import config from '../contract/index';
+import config from '../config/index';
 import { toast } from 'react-toastify';
 
 const _initialState = {
     account: "",
-    totalBalance: 0,
     rewardsPerUnitTime: 0,
     timeUnit: 1,
+    totalBalance: 0,
     stakedTokens: [],
     unstakedTokens: [],
     amountStaked: 0,
@@ -15,21 +15,16 @@ const _initialState = {
     unclaimedRewards: 0
 };
 
-const init = (init) => {
-    return init;
-};
-
-const NFT_PORT_API_URL = "https://api.nftport.xyz/v0/accounts";
-const NFT_PORT_API_KEY = "9ab697a7-eea2-414e-b088-6658ceb53b4d";
-
-//const globalWeb3 = new Web3(config.mainNetUrl);
+const globalWeb3 = new Web3(config.mainNetUrl);
 const provider = Web3.providers.HttpProvider(config.mainNetUrl);
 const web3 = new Web3(Web3.givenProvider || provider);
 
 const NFTStakeCon = new web3.eth.Contract(config.NFTStakeAbi, config.NFTStakeAddress);
 const ERC721Con = new web3.eth.Contract(config.ERC721Abi, config.ERC721Address);
 
-console.log("provider", config.mainNetUrl);
+var NFTInfoDict = {};
+
+console.log("Provider", config.mainNetUrl);
 console.log("NFT staking contract", config.NFTStakeAddress);
 console.log("ERC721 token contract", config.ERC721Address);
 
@@ -41,9 +36,9 @@ const stake = async (state, tokenIds) => {
 
     try {
         await NFTStakeCon.methods.stake(tokenIds).send({ from: state.account });
+        store.dispatch({ type: "GET_ACCOUNT_INFO" });
     } catch (e) {
-        console.log("Error on Stake: ", e);
-        store.dispatch({ type: "RETURN_DATA", payload: {} });
+        console.log(e);
     }
 }
 
@@ -54,13 +49,9 @@ const claim = async (state) => {
     }
     try {
         await NFTStakeCon.methods.claimRewards().send({ from: state.account });
-        store.dispatch({
-            type: "RETURN_DATA",
-            payload: {},
-        });
+        store.dispatch({ type: "GET_ACCOUNT_INFO" });
     } catch (e) {
-        console.log("Error on Stake : ", e);
-        store.dispatch({ type: "RETURN_DATA", payload: {} });
+        console.log(e);
     }
 }
 
@@ -72,149 +63,148 @@ const unstake = async (state, tokenIds) => {
 
     try {
         await NFTStakeCon.methods.withdraw(tokenIds).send({ from: state.account });
-        store.dispatch({
-            type: "RETURN_DATA",
-            payload: {},
-        });
+        store.dispatch({ type: "GET_ACCOUNT_INFO" });
     } catch (e) {
-        console.log("Error on Stake : ", e);
-        store.dispatch({ type: "RETURN_DATA", payload: {} });
+        console.log(e);
     }
 }
 
-export const getAccountInfo = async (state) => {
+const getAccountInfo = async (state) => {
     if (!state.account) {
         alertMsg("Please connect metamask!");
         return;
     }
-
+    
     try {
-        //var broBalance = await bro.methods.balanceOf(state.account).call();
-        //broBalance = globalWeb3.utils.fromWei(broBalance, 'ether');
-        //console.log("broBalance = ", broBalance);
-
+        var account = '0xdd89316929A975D7F65507BD3Cb4DD2f724ef07c';
         //var account = '0x79ca15110241605ae97f73583f5c3f140506fb80';
-        var account = state.account;
-        var stakeInfo = await NFTStakeCon.methods.getStakeInfo(account).call();
-        //console.log(stakeInfo);
-
-        var stakedTokens = stakeInfo._tokensStaked.map(async tokenId => {
-            var tokenURI = await ERC721Con.methods.tokenURI(tokenId).call();
-            return {
-                id: tokenId,
-                url: tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
-            };
-        });
+        //var account = state.account;
 
         var staker = await NFTStakeCon.methods.stakers(account).call();
-        console.log(staker);
+        console.log("Staker:", staker);
+
+        var stakeInfo = await NFTStakeCon.methods.getStakeInfo(account).call();
+        console.log("Stake Info:", stakeInfo);
+
+        var stakedTokens = [];
+        for (let i = 0; i < stakeInfo._tokensStaked.length; i++) {
+            let tokenId = stakeInfo._tokensStaked[i];
+            if (!NFTInfoDict[tokenId]) {
+                let tokenURI = await ERC721Con.methods.tokenURI(tokenId).call();
+                //console.log("token Id:", tokenId);
+                //console.log("token URI:", tokenURI);
+    
+                let res = await fetch(tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/"));
+                res = await res.json();
+                console.log("NFT Info:", res);
+                NFTInfoDict[tokenId] = {
+                    url: res.image.replace("ipfs://", "https://ipfs.io/ipfs/"),
+                    //name: res.name,
+                    //description: res.description
+                };
+            }
+
+            stakedTokens = [...stakedTokens, {
+                id: tokenId,
+                url: NFTInfoDict[tokenId].url,
+                //name: NFTInfoDict[tokenId].name,
+                //description: NFTInfoDict[tokenId].description
+            }];
+        }
+        console.log("Staked Tokens:", stakedTokens);
 
         const options = {
             method: 'GET',
             headers: {
                 accept: 'application/json',
-                Authorization: NFT_PORT_API_KEY
+                Authorization: config.NFT_SERVER_API_KEY
             }
         };
         
         var allNFTs = [];
         var continuation = true;
         while (continuation) {
-            var res = await fetch(`${NFT_PORT_API_URL}/${account}?chain=polygon&page_size=50&include=metadata&contract_address=${config.ERC721Address}`, options);
+            var res = await fetch(`${config.NFT_SERVER_API_URL}/${account}?chain=polygon&page_size=50&include=metadata&contract_address=${config.ERC721Address}`, options);
             res = await res.json();
             allNFTs = [...allNFTs, ...res.nfts];
             continuation = res.continuation;
         }
-        //console.log(allNFTs);
+        //console.log("All NFTs:", allNFTs);
 
-        var unstakedNFTs = [];
-        unstakedNFTs = allNFTs.filter(item => {
-            let finded_item = stakedTokens.find(item2 => {
-                return item.id === item2.id;
-            });
-            if (finded_item)
-                return false;
-            return true;
-        });
-
-        var unstakedTokens = unstakedNFTs.map(item => {
+        var unstakedTokens = allNFTs.map(item => {
             var tokenURI = "";
             if (item.file_url)
                 tokenURI = item.file_url;
             
+            if (!NFTInfoDict[item.token_id]) {
+                NFTInfoDict[item.token_id] = {
+                    url: tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+                };
+            }
+            
             return {
                 id: item.token_id,
-                url: tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+                url: NFTInfoDict[item.token_id].url
             };
         });
-        //console.log(unstakedTokens);
+        console.log("Unstaked Tokens:", unstakedTokens);
 
         store.dispatch({
-            type: "UPDATE_ACCOUNT_INFO",
+            type: "RETURN_DATA",
             payload: {
                 stakedTokens: stakedTokens,
                 unstakedTokens: unstakedTokens,
                 amountStaked: staker ? parseFloat(staker.amountStaked).toFixed(2) : 0,
                 timeOfLastUpdate: staker ? parseFloat(staker.timeOfLastUpdate).toFixed(2) : 0,
-                unclaimedRewards: staker ? parseFloat(staker.unclaimedRewards).toFixed(2) : 0
+                unclaimedRewards: staker ? globalWeb3.utils.fromWei(staker.unclaimedRewards.toString(), 'ether') : 0
             }
         });
     } catch (e) {
         console.log(e);
-        store.dispatch({ type: "RETURN_DATA", payload: {} });
     }
 }
 
-export const getContractInfo = async (state) => {
-    if (NFTStakeCon === undefined) {
+const getContractInfo = async (state) => {
+    if (!NFTStakeCon) {
         alertMsg("Please install metamask!");
         return;
     }
 
     try {
         var totalBalance = await NFTStakeCon.methods.getRewardTokenBalance().call();
-        var rewardsPerUnitTime = await NFTStakeCon.methods.getRewardsPerUnitTime().call();
-        var timeUnit = await NFTStakeCon.methods.getTimeUnit().call();
-        //totalBalance = globalWeb3.utils.fromWei(totalBalance.toString(), 'ether');
+        totalBalance = globalWeb3.utils.fromWei(totalBalance.toString(), 'ether');
         console.log("Total Balance: ", totalBalance);
+
+        var rewardsPerUnitTime = await NFTStakeCon.methods.getRewardsPerUnitTime().call();
+        rewardsPerUnitTime = globalWeb3.utils.fromWei(rewardsPerUnitTime.toString(), 'ether');
+
+        var timeUnit = await NFTStakeCon.methods.getTimeUnit().call();
+        timeUnit = parseFloat(timeUnit).toFixed(2);
+
         console.log("RewardsPerUnitTime: ", rewardsPerUnitTime);
         console.log("TimeUnit: ", timeUnit);
 
         store.dispatch({
-            type: "UPDATE_CONTRACT_INFO",
+            type: "RETURN_DATA",
             payload: {
-                totalBalance: parseFloat(totalBalance).toFixed(2),
-                rewardsPerUnitTime: parseFloat(rewardsPerUnitTime).toFixed(2),
-                timeUnit: parseFloat(timeUnit).toFixed(2)
+                rewardsPerUnitTime: rewardsPerUnitTime,
+                timeUnit: timeUnit,
+                totalBalance: parseFloat(totalBalance).toFixed(2)
             }
         })
     } catch (e) {
-        console.log("Error on getContractInfo : ", e);
-        store.dispatch({ type: "RETURN_DATA", payload: {} });
+        console.log(e);
     }
 }
 
-const reducer = (state = init(_initialState), action) => {
+const reducer = (state = _initialState, action) => {
     switch (action.type) {
         case "GET_CONTRACT_INFO":
             getContractInfo(state);
             break;
 
-        case "UPDATE_CONTRACT_INFO":
-            state = {
-                ...state,
-                ...action.payload
-            };
-            break;
-
-        case "UPDATE_ACCOUNT_INFO":
-            state = {
-                ...state,
-                ...action.payload
-            };
-            break;
-
         case "GET_ACCOUNT_INFO":
+            console.log("Running action GET_ACCOUNT_INFO...");
             if (!checkNetwork(state.chainId)) {
                 changeNetwork();
                 return state;
@@ -269,14 +259,18 @@ const reducer = (state = init(_initialState), action) => {
             }
 
             web3.eth.getAccounts((err, accounts) => {
-                store.dispatch({
-                    type: 'RETURN_DATA',
-                    payload: { account: accounts[0] }
-                });
+                if (accounts.length > 0) {
+                    store.dispatch({
+                        type: 'RETURN_DATA',
+                        payload: { account: accounts[0] }
+                    });
+
+                    store.dispatch({ type: "GET_ACCOUNT_INFO" });
+                }
             })
             break;
 
-        case 'CHANGE_ACCOUNT':
+        case 'CHECK_NETWORK':
             if (!checkNetwork(state.chainId)) {
                 changeNetwork();
                 return state;
@@ -342,15 +336,30 @@ const changeNetwork = async () => {
 if (window.ethereum) {
     window.ethereum.on('accountsChanged', function (accounts) {
         console.log("Account changed: ", accounts);
-        store.dispatch({
-            type: "RETURN_DATA",
-            payload: { account: accounts[0] }
-        });
-        store.dispatch({
-            type: "CHANGE_ACCOUNT",
-            payload: { account: accounts[0] }
-        });
-    })
+        if (accounts.length > 0) {
+            store.dispatch({
+                type: "RETURN_DATA",
+                payload: {
+                    account: accounts[0]
+                }
+            });
+            store.dispatch({ type: "GET_ACCOUNT_INFO" });
+        }
+        else {
+            store.dispatch({
+                type: "RETURN_DATA",
+                payload: {
+                    account: "",
+                    totalBalance: 0,
+                    stakedTokens: [],
+                    unstakedTokens: [],
+                    amountStaked: 0,
+                    timeOfLastUpdate: 0,
+                    unclaimedRewards: 0
+                }
+            });
+        }
+    });
 
     window.ethereum.on('chainChanged', function (chainId) {
         checkNetwork(chainId);
