@@ -115,7 +115,7 @@ class NFTList extends StatefulComponent {
                                 <div key={item.id} className="nft-list-item">
                                     <img src={item.url} width="auto" height="100" />
                                     <div className="ft-list-item-button-container">
-                                        <button onClick={ () => this.onUnstake(item.id) }>Untake</button>
+                                        <button onClick={ () => this.onUnstake(item.id) }>Unstake</button>
                                     </div>
                                 </div>
                             );
