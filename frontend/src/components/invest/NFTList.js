@@ -88,8 +88,9 @@ class NFTList extends StatefulComponent {
         }
 
         if (this.props.stakedTokens.length > 0) {
-            var tokenIds = this.props.unstakedTokens.map(item => item.id);
-            this.props.dispatch({ type: "UNSTAKE_ALL_TOKENS", payload: tokenIds });
+            console.log(this.props.stakedTokens);
+            var tokenIds = this.props.stakedTokens.map(item => item.id);
+            this.props.dispatch({ type: "UNSTAKE_ALL_TOKENS", payload: { tokenIds: tokenIds } });
         }
         else {
             toast.info('There is no token to unstake!', {

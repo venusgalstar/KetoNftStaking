@@ -94,7 +94,7 @@ const PurchaseForm = () => {
 
         if (stakedTokens.length > 0) {
             var tokenIds = unstakedTokens.map(item => item.id);
-            dispatch({ type: "UNSTAKE_ALL_TOKENS", payload: tokenIds });
+            dispatch({ type: "UNSTAKE_ALL_TOKENS", payload: { tokenIds: tokenIds } });
         }
         else {
             toast.info('There is no token to unstake!', {

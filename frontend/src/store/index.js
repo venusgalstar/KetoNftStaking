@@ -76,7 +76,7 @@ const getAccountInfo = async (state) => {
     }
     
     try {
-        // var account = '0xdd89316929A975D7F65507BD3Cb4DD2f724ef07c';
+        //var account = '0xdd89316929A975D7F65507BD3Cb4DD2f724ef07c';
         //var account = '0x79ca15110241605ae97f73583f5c3f140506fb80';
         var account = state.account;
 
